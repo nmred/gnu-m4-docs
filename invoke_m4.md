@@ -180,10 +180,11 @@ m4 的一些限制可以修改。为了兼容性，m4 也接收一些控制限�
 
 --diversions=num
 
-These options are present only for compatibility with previous versions of GNU m4, and were controlling the number of possible diversions which could be used at the same time. They do nothing, because there is no  xed limit anymore. They may disappear in future releases, and issue a warning to that e ect.
+该选项参数仅仅是为了兼容老版本的 m4, 并且控制在同一时间的转向次数。在这里没有不起任何作用，在随后的版本中可能会去掉该参数
 
 ### 转存状态选项参数
 
+GNU m4 配备了转出
 GNU m4 comes with a feature of freezing internal state (see Chapter 15 [Frozen  les], page 105). This can be used to speed up m4 execution when reusing a common initialization script.
 
 -F file --freeze-state=file
