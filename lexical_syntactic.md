@@ -4,42 +4,65 @@ As m4 reads its input, it separates it into tokens. A token is either a name, a 
 
 ### 宏名称
 
-A name is any sequence of letters, digits, and the character ‘_’ (underscore), where the first character is not a digit. m4 will use the longest such sequence found in the input. If a name has a macro definition, it will be subject to macro expansion (see Chapter 4 [Macros], page 19). Names are case-sensitive.
-Examples of legal names are: ‘foo’, ‘_tmp’, and ‘name01’.
+宏名称由任意字母、数字、下划线组成，首个字符不能是数字。m4 将从输入中查找最长的序列。如果是一个定义的宏，将会被做宏展开处理(参考第四章[宏]()) 。宏名称大小写敏感。例如合法的宏名称：`foo`、`_tmp` 和 `name01`
 
 ### m4 引号输入
 
-A quoted string is a sequence of characters surrounded by quote strings, defaulting to ‘‘’ and ‘’’, where the nested begin and end quotes within the string are balanced. The value of a string token is the text, with one level of quotes stripped o↵. Thus
-‘’
-)
-is the empty string, and double-quoting turns into single-quoting.
-‘‘quoted’’ )‘quoted’
-The quote characters can be changed at any time, using the builtin macro changequote. See Section 8.2 [Changequote], page 62, for more information.
+一个引证字符串是由引证字符包起来的字符串，引证字符默认是 `'`, 引证字符在嵌套时开始和结束引证符必须是闭合的。引证的字符串是文本，并且会一级一级的展开，例如：
+
+>**''**
+
+>**=>**
+
+将输出空字符串，两个引证字符最终结果将变成有一个引证字符包括的字符串：
+
+>**''quoted''**
+
+>**=>'quoted'**
+
+引证字符可以随时修改，使用内建宏 `changequote`, 更多信息参考[修改引证字符]()
 
 ### 注释
 
-Comments in m4 are normally delimited by the characters ‘#’ and newline. All charac- ters between the comment delimiters are ignored, but the entire comment (including the delimiters) is passed through to the output—comments are not discarded by m4.
-Comments cannot be nested, so the first newline after a ‘#’ ends the comment. The commenting e↵ect of the begin-comment string can be inhibited by quoting it.
-$ m4
-‘quoted text’ # ‘commented text’ )quoted text # ‘commented text’ ‘quoting inhibits’ ‘#’ ‘comments’ )quoting inhibits # comments
-The comment delimiters can be changed to any string at any time, using the builtin macro changecom. See Section 8.3 [Changecom], page 65, for more information.
+在 m4 中注释是正常情况下是通过 `#` 字符或者新行限定。在注释限定范围内的所有字符串都将忽略，但是所有的注释最终会输出，m4 在输出的时候不会忽略注释。
+
+注释不能嵌套，所以新行首个 `#` 字符后就是注释。如果字符`#` 通过引证字符引起来可以是注释含义失效 
+
+>**$ m4**
+
+>**'quoted text' # 'commented text'**
+
+>**=>quoted text # 'commented text'** 
+
+>**'quoting inhibits' '#' 'comments'**
+
+>**=>quoting inhibits # comments**
+
+注释分隔符在任何时候都可以修改，使用内建宏 `changecom`。更多信息参考 [修改注释符]()
 
 ### 其他语法
 
-Any character, that is neither a part of a name, nor of a quoted string, nor a comment, is a token by itself. When not in the context of macro expansion, all of these tokens are just copied to output. However, during macro expansion, whitespace characters (space, tab, newline, formfeed, carriage return, vertical tab), parentheses (‘(’ and ‘)’), comma (‘,’), and dollar (‘$’) have additional roles, explained later.
+任何字符，其既不是宏名的一部分，也不是引证字符或注释，其实就是其本身。当不是宏展开上下文是所有的标记仅仅是拷贝复制到输出中，然而在宏展开时，空白字符（空格、tab、换行符、回车符、制表符），圆括号（`(`和 `)`）, 逗号(`,`) 以及`$` 将有附加含义，稍后解释 
 
 ### m4 输入文件转化为输出文件规则
 
-As m4 reads the input token by token, it will copy each token directly to the output imme-
-diately.
+As m4 reads the input token by token, it will copy each token directly to the output immediately.
+
 The exception is when it finds a word with a macro definition. In that case m4 will calculate the macro’s expansion, possibly reading more input to get the arguments. It then inserts the expansion in front of the remaining input. In other words, the resulting text from a macro call will be read and parsed into tokens again.
+
 m4 expands a macro as soon as possible. If it finds a macro call when collecting the arguments to another, it will expand the second call first. This process continues until there are no more macro calls to expand and all the input has been consumed.
+
 For a running example, examine how m4 handles this input: format(‘Result is %d’, eval(‘2**15’))
+
 First, m4 sees that the token ‘format’ is a macro name, so it collects the tokens ‘(’, ‘‘Result is %d’’, ‘,’, and ‘ ’, before encountering another potential macro. Sure enough, ‘eval’ is a macro name, so the nested argument collection picks up ‘(’, ‘‘2**15’’, and ‘)’, invoking the eval macro with the lone argument of ‘2**15’. The expansion of ‘eval(2**15)’ is ‘32768’, which is then rescanned as the five tokens ‘3’, ‘2’, ‘7’, ‘6’, and ‘8’; and combined with the next ‘)’, the format macro now has all its arguments, as if the user had typed:
+
      format(‘Result is %d’, 32768)
+
 The format macro expands to ‘Result is 32768’, and we have another round of scanning for the tokens ‘Result’, ‘ ’, ‘is’, ‘ ’, ‘3’, ‘2’, ‘7’, ‘6’, and ‘8’. None of these are macros, so the final output is
+
 )Result is 32768
 As a more complicated example, we will contrast an actual code example from the Gnulib project1, showing both a buggy approach and the desired results. The user desires to output a shell assignment statement that takes its argument and turns it into a shell variable by converting it to uppercase and prepending a prefix. The original attempt looks like this:
+
      changequote([,])dnl
      define([gl_STRING_MODULE_INDICATOR],
        [
