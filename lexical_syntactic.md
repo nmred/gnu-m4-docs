@@ -1,8 +1,6 @@
 # 语法与词法
 
-As m4 reads its input, it separates it into tokens. A token is either a name, a quoted string, or any single character, that is not a part of either a name or a string. Input to m4 can also contain comments. GNU m4 does not yet understand multibyte locales; all operations are byte-oriented rather than character-oriented (although if your locale uses a single byte encoding, such as ISO-8859-1, you will not notice a di↵erence). However, m4 is eight-bit clean, so you can use non-ascii characters in quoted strings (see Section 8.2 [Changequote], page 62), comments (see Section 8.3 [Changecom], page 65), and macro names (see Section 5.7 [Indir], page 34), with the exception of the nul character (the zero byte ‘’\0’’).
-
-m4 读取的输入数据通过标记分隔，标记可以是名称、引号引用的字符串或者是单个字符，并不属于一个宏名称或者字符串的一部分。m4 输入数据中也可以包含注释。由于 GNU m4 无法理解多字节域；所以所有的操作都是面向字节而不是面向字符的（虽然你使用单字节编码如 ISO-8859-1, 也不会发现差异）。然而，m4 是按照 8-bit 位计算，所以你可以引号引用字符串在使用非 ASCII 字符时（参考 [修改引号符号]()I)，
+m4 读取的输入数据通过标记分隔，标记可以是名称、引号引用的字符串或者是单个字符，并不属于一个宏名称或者字符串的一部分。m4 输入数据中也可以包含注释。由于 GNU m4 无法理解多字节域；所以所有的操作都是面向字节而不是面向字符的（虽然你使用单字节编码如 ISO-8859-1, 也不会发现差异）。然而，m4 是按照 8-bit 位计算，所以你可以使用引证字符将非 ASCII 字符括起来（参考 [修改引证符号]()I)，包括注释 (参考[Changecom]()) ，宏名称参考 ([Indir]()), 除了字符 NUL ('\0') 等
 
 ### 宏名称
 
