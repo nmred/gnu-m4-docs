@@ -1,6 +1,6 @@
 # 语法与词法
 
-m4 读取的输入数据通过标记分隔，标记可以是名称、引号引用的字符串或者是单个字符，并不属于一个宏名称或者字符串的一部分。m4 输入数据中也可以包含注释。由于 GNU m4 无法理解多字节域；所以所有的操作都是面向字节而不是面向字符的（虽然你使用单字节编码如 ISO-8859-1, 也不会发现差异）。然而，m4 是按照 8-bit 位计算，所以你可以使用引证字符将非 ASCII 字符括起来（参考 [修改引证符号]()I)，包括注释 (参考[Changecom]()) ，宏名称参考 ([Indir]()), 除了字符 NUL ('\0') 等
+m4 读取的输入数据通过标记分隔，标记可以是名称、引号引用的字符串或者是单个字符，并不属于一个宏名称或者字符串的一部分。m4 输入数据中也可以包含注释。由于 GNU m4 无法理解多字节域；所以所有的操作都是面向字节而不是面向字符的（虽然你使用单字节编码如 ISO-8859-1, 也不会发现差异）。然而，m4 是按照 8-bit 位编码，所以你可以使用引证字符将非 ASCII 字符括起来（参考 [修改引证符号]()I)，包括注释 (参考[Changecom]()) ，宏名称参考 ([Indir]()), 除了字符 NUL ('\0') 等
 
 ### 宏名称
 
@@ -48,30 +48,40 @@ m4 读取的输入数据通过标记分隔，标记可以是名称、引号引�
 
 As m4 reads the input token by token, it will copy each token directly to the output immediately.
 
-The exception is when it finds a word with a macro definition. In that case m4 will calculate the macro’s expansion, possibly reading more input to get the arguments. It then inserts the expansion in front of the remaining input. In other words, the resulting text from a macro call will be read and parsed into tokens again.
+作为一个通过 m4 标记输入的任何标记都将会立即复制写入到输出中。除非发现是一个宏定义，m4 将计算宏展开，参数通过读取更多的输入获取。然后将展开后的值插入到剩余输入的前面. 换句话说，调用一个宏解析展开后会被再次计算宏展开。
 
-m4 expands a macro as soon as possible. If it finds a macro call when collecting the arguments to another, it will expand the second call first. This process continues until there are no more macro calls to expand and all the input has been consumed.
+m4 展开宏操作非常快，如果在展开一个宏时会收集计算参数，参数将被再次展开在调用宏前。该处理将会继续，知道没有任何宏调用需要展开。
 
-For a running example, examine how m4 handles this input: format(‘Result is %d’, eval(‘2**15’))
+例如，m4 中输入：
 
-First, m4 sees that the token ‘format’ is a macro name, so it collects the tokens ‘(’, ‘‘Result is %d’’, ‘,’, and ‘ ’, before encountering another potential macro. Sure enough, ‘eval’ is a macro name, so the nested argument collection picks up ‘(’, ‘‘2**15’’, and ‘)’, invoking the eval macro with the lone argument of ‘2**15’. The expansion of ‘eval(2**15)’ is ‘32768’, which is then rescanned as the five tokens ‘3’, ‘2’, ‘7’, ‘6’, and ‘8’; and combined with the next ‘)’, the format macro now has all its arguments, as if the user had typed:
+>**format(‘Result is %d’, eval('2**15'))**
 
-     format(‘Result is %d’, 32768)
+首先，m4 看到标记`format` 是一个宏名称，说以通过收集标记 `(`, `'Result is %d'`, `,` 和 `' '` 在遇到下一个可能是宏的标记时。的确， `eval` 是一个宏名称，所以将嵌套收集参数 `(`, `'2**15'` 和 `)`, 调用宏 `eval` 参数为 `2**15`. `eval(2**15)` 展开后的结果为 `32768`, 将继续扫描五个标记 `3`,`2`,`7`,`6`和`8`；合并左括号 `)` ，现在宏格式化了所有的参数，就类似与用户输入一样：
 
-The format macro expands to ‘Result is 32768’, and we have another round of scanning for the tokens ‘Result’, ‘ ’, ‘is’, ‘ ’, ‘3’, ‘2’, ‘7’, ‘6’, and ‘8’. None of these are macros, so the final output is
+>**format(‘Result is %d’, 32768)**
 
-)Result is 32768
-As a more complicated example, we will contrast an actual code example from the Gnulib project1, showing both a buggy approach and the desired results. The user desires to output a shell assignment statement that takes its argument and turns it into a shell variable by converting it to uppercase and prepending a prefix. The original attempt looks like this:
+这个格式的宏展开后 `Result is 32768`, 并且我们进行下一轮扫描标记 `Result`, ` `, `is` , ` `, `3`,`2`,`7`,`6`和`8`。 这些里面不再存在宏名称，所以最终输出：
 
-     changequote([,])dnl
-     define([gl_STRING_MODULE_INDICATOR],
-       [
-         dnl comment
-         GNULIB_]translit([$1],[a-z],[A-Z])[=1
-       ])dnl
-       gl_STRING_MODULE_INDICATOR([strcase])
+>=>**Result is 32768**
 
-) GNULIB_strcase=1 )
+举一个复杂的例子，将对照一个 GNULIB 实际的代码示例, 既能显示代码又能得到预期的结果。用户期望输入一个 shell 赋值语句，通过将参数转化为一个 shell 变量，并且变量名称会转化为带前缀的大写字母组成. 例如：
+
+```
+changequote([,])dnl
+define([gl_STRING_MODULE_INDICATOR],
+  [
+    dnl comment
+    GNULIB_]translit([$1],[a-z],[A-Z])[=1
+])dnl
+gl_STRING_MODULE_INDICATOR([strcase])
+```
+>**=>**
+
+>**=>		GNULIB_strcase=1**
+
+>**=>**
+
+参数没有大写，尽管在手册上不太容易显示，出现两个空行实际上在尾部有两个空格。解析到这步很容易看到其发生了什么。首先，m4 看到标记 `changequote`, 这是一个宏标记，随后的 `(`, `[`, `]` 和 `)` 
 Oops – the argument did not get capitalized. And although the manual is not able to easily show it, both lines that appear empty actually contain two trailing spaces. By stepping through the parse, it is easy to see what happened. First, m4 sees the token ‘changequote’, which it recognizes as a macro, followed by ‘(’, ‘[’, ‘,’, ‘]’, and ‘)’ to form the argument list. The macro expands to the empty string, but changes the quoting characters to something more useful for generating shell code (unbalanced ‘‘’ and ‘’’ appear all the time in shell scripts, but unbalanced ‘[]’ tend to be rare). Also in the first line, m4 sees the token ‘dnl’, which it recognizes as a builtin macro that consumes the rest of the line, resulting in no output for that line.
 The second line starts a macro definition. m4 sees the token ‘define’, which it recognizes as a macro, followed by a ‘(’, ‘[gl_STRING_MODULE_INDICATOR]’, and ‘,’. Because an unquoted comma was encountered, the first argument is known to be the expansion of the single-quoted string token, or ‘gl_STRING_MODULE_INDICATOR’. Next, m4 sees ‘NL’, ‘ ’, and ‘ ’, but this whitespace is discarded as part of argument collection. Then comes a rather lengthy single-quoted string token, ‘[NL dnl commentNL GNULIB_]’. This is followed by the token ‘translit’, which m4 recognizes as a macro name, so a nested macro expansion has started.
 The arguments to the translit are found by the tokens ‘(’, ‘[$1]’, ‘,’, ‘[a-z]’, ‘,’, ‘[A-Z]’, and finally ‘)’. All three string arguments are expanded (or in other words, the quotes are stripped), and since neither ‘$’ nor ‘1’ need capitalization, the result of the macro is ‘$1’. This expansion is rescanned, resulting in the two literal characters ‘$’ and ‘1’.
